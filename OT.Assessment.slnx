@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="DatabaseGenerate.sql" />
+    <File Path="Notes.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/OT.Assessment.App/OT.Assessment.App.csproj" />
+    <Project Path="src/OT.Assessment.Consumer/OT.Assessment.Consumer.csproj" />
+    <Project Path="src/OT.Assessment.Core/OT.Assessment.Core.csproj" />
+    <Project Path="src/OT.Assessment.Infrastructure/OT.Assessment.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/OT.Assessment.Tester/OT.Assessment.Tester.csproj" />
+    <Project Path="test/OT.Assessment.Tests/OT.Assessment.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <ItemGroup>
+    <ProjectReference Include="..\OT.Assessment.Core\OT.Assessment.Core.csproj" />
+    <ProjectReference Include="..\OT.Assessment.Infrastructure\OT.Assessment.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The dashboard page travels inside the assembly (see DashboardEndpoint). -->
+    <EmbeddedResource Include="Dashboard\dashboard.html" LogicalName="dashboard.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="appsettings*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

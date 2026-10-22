@@ -1,0 +1,68 @@
+# Everything the solution needs, in containers:
+#   docker compose -f docker/docker-compose.yml up -d                    RabbitMQ + SQL Server (+ schema)
+#   docker compose -f docker/docker-compose.yml --profile redis up -d    ... and Redis for the distributed cache
+#
+# SQL Server in a container cannot use Windows Integrated Security, so run the API and the consumer with the
+# "SqlAuth" launch profile (Notes.md, section 2, "Option B"). The sa password below matches appsettings.SqlAuth.json.
+name: ot-assessment
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: ot-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: ot-mssql
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: OtAssessment_Passw0rd1
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  # One-shot job: creates OT_Assessment_DB from DatabaseGenerate.sql (the script is idempotent, so re-running is safe).
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    platform: linux/amd64
+    container_name: ot-db-init
+    depends_on:
+      mssql:
+        condition: service_healthy
+    volumes:
+      - ../DatabaseGenerate.sql:/scripts/DatabaseGenerate.sql:ro
+    entrypoint: ["/opt/mssql-tools18/bin/sqlcmd", "-C", "-S", "mssql", "-U", "sa", "-P", "OtAssessment_Passw0rd1", "-b", "-i", "/scripts/DatabaseGenerate.sql"]
+    restart: "no"
+
+  redis:
+    image: redis:7-alpine
+    container_name: ot-redis
+    profiles: ["redis"]
+    ports:
+      - "6379:6379"
+
+volumes:
+  rabbitmq-data:
+  mssql-data:

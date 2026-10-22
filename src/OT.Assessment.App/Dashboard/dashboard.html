@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OT Assessment - Live Ingestion</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --ok:#4ade80; --warn:#fbbf24; --bad:#f87171; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f1f5f9; --card:#fff; --text:#0f172a; --muted:#64748b; --accent:#0284c7; --ok:#16a34a; --warn:#d97706; --bad:#dc2626; } }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--text); font:15px/1.5 system-ui, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  p.sub { color: var(--muted); margin: 0 0 20px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:16px; }
+  .card { background:var(--card); border-radius:12px; padding:16px; }
+  .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.05em; }
+  .value { font-size:28px; font-weight:650; font-variant-numeric: tabular-nums; }
+  table { width:100%; border-collapse:collapse; }
+  th, td { text-align:left; padding:6px 8px; border-bottom:1px solid rgba(148,163,184,.2); font-variant-numeric: tabular-nums; }
+  td.num, th.num { text-align:right; }
+  .pill { display:inline-block; padding:2px 10px; border-radius:99px; font-size:13px; font-weight:500; }
+  .ok { background:rgba(74,222,128,.15); color:var(--ok); }
+  .busy { background:rgba(251,191,36,.15); color:var(--warn); }
+  .bad { background:rgba(248,113,113,.15); color:var(--bad); }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Live ingestion</h1>
+  <p class="sub">Polls <code>/api/admin/stats</code> and <code>/api/player/topSpenders</code> &middot; <a href="/openapi/v1.json">OpenAPI</a> &middot; <a href="/health/ready">health</a></p>
+
+  <div class="grid">
+    <div class="card"><div class="label">Stored in SQL</div><div class="value" id="stored">-</div></div>
+    <div class="card"><div class="label">Players</div><div class="value" id="players">-</div></div>
+    <div class="card"><div class="label">Queued</div><div class="value" id="queued">-</div></div>
+    <div class="card"><div class="label">Dead-lettered</div><div class="value" id="dead">-</div></div>
+    <div class="card"><div class="label">Stored / second</div><div class="value" id="rate">-</div></div>
+    <div class="card"><div class="label">Status</div><div class="value"><span class="pill" id="status">-</span></div></div>
+  </div>
+
+  <div class="card">
+    <div class="label" style="margin-bottom:8px">Top 10 spenders</div>
+    <table>
+      <thead><tr><th>#</th><th>Username</th><th class="num">Total spend</th></tr></thead>
+      <tbody id="top"></tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const fmt = n => Number(n).toLocaleString();
+  let previous = null;
+
+  function setStatus(text, cls) {
+    $('status').textContent = text;
+    $('status').className = 'pill ' + cls;
+  }
+
+  async function pollStats() {
+    try {
+      const response = await fetch('/api/admin/stats');
+      if (!response.ok) throw new Error(response.status);
+      const s = await response.json();
+      const now = Date.now();
+
+      $('stored').textContent = fmt(s.storedWagers);
+      $('players').textContent = fmt(s.storedPlayers);
+      $('queued').textContent = fmt(s.queuedWagers);
+      $('dead').textContent = fmt(s.deadLetteredWagers);
+
+      if (previous) {
+        const perSecond = (s.storedWagers - previous.stored) / ((now - previous.at) / 1000);
+        $('rate').textContent = fmt(Math.max(0, Math.round(perSecond)));
+      }
+      previous = { stored: s.storedWagers, at: now };
+
+      if (s.deadLetteredWagers > 0) setStatus('dead letters', 'bad');
+      else if (s.queuedWagers > 0) setStatus('processing', 'busy');
+      else setStatus('drained', 'ok');
+    } catch {
+      setStatus('unreachable', 'bad');
+    }
+  }
+
+  async function pollTopSpenders() {
+    try {
+      const response = await fetch('/api/player/topSpenders?count=10');
+      if (!response.ok) throw new Error(response.status);
+      const rows = await response.json();
+      const body = $('top');
+      body.replaceChildren();
+      rows.forEach((player, index) => {
+        const tr = document.createElement('tr');
+        const cells = [
+          index + 1,
+          player.username,
+          player.totalAmountSpend.toLocaleString(undefined, { maximumFractionDigits: 2 })
+        ];
+        cells.forEach((value, column) => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          if (column === 2) td.className = 'num';
+          tr.appendChild(td);
+        });
+        body.appendChild(tr);
+      });
+    } catch { /* keep the last render */ }
+  }
+
+  pollStats(); pollTopSpenders();
+  setInterval(pollStats, 1000);
+  setInterval(pollTopSpenders, 3000);
+</script>
+</body>
+</html>

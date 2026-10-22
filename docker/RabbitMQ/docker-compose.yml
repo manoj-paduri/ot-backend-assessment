@@ -1,0 +1,24 @@
+# RabbitMQ only (use this when SQL Server runs natively on Windows with Integrated Security).
+# AMQP: localhost:5672   Management UI: http://localhost:15672   credentials: guest / guest
+name: ot-assessment-rabbitmq
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: ot-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+volumes:
+  rabbitmq-data:

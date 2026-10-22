@@ -1,0 +1,3 @@
+@echo off
+rem Starts a local RabbitMQ (guest/guest) on localhost:5672, management UI on http://localhost:15672
+docker compose -f "%~dp0docker-compose.yml" up -d
