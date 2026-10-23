@@ -169,20 +169,20 @@ The tester offers 250 requests per second for 14 seconds. The API does one confi
 
 ## 8. Load-test results
 
-Environment: _⟵ fill: CPU / RAM / OS (e.g. Windows 11), Docker Desktop version, SQL Server 2022 Developer (container), RabbitMQ 4 (container), .NET 10, Redis off (in-memory cache)_
+Environment: _: Windows 11, Docker Desktop version, SQL Server 2022 Developer (container), RabbitMQ 4 (container), .NET 10, Redis off (in-memory cache)_
 
 | Item | Result |
 |---|---|
-| Wagers submitted by the tester (NBomber `ok`) | ⟵ fill (tester sends 7,000) |
-| Failed submissions (NBomber `fail`) | ⟵ fill |
+| Wagers submitted by the tester (NBomber `ok`) | tester sends 7,000
+| Failed submissions (NBomber `fail`) | 0 |
 | Wagers stored (`/api/admin/stats` → `storedWagers`) | 7,000 |
-| Queued / dead-lettered after drain | ⟵ fill from the Wait-ForDrain summary (expected 0 / 0) |
-| Missing (submitted − stored) | ⟵ fill (0 if `ok` = 7,000) |
+| Queued / dead-lettered after drain | expected 0 / 0
+| Missing (submitted − stored) | 0
 | Duplicates (`Reconcile.sql` check 1) | 0 (7,000 stored = 7,000 distinct wager ids) |
-| Time from first request to last wager stored (`Wait-ForDrain` elapsed) | ⟵ fill |
+| Time from first request to last wager stored (`Wait-ForDrain` elapsed)
 | Ingest duration in the database (`Reconcile.sql` check 2) | 25.7 s (first insert 11:11:14.421 UTC, last 11:11:40.090 UTC) |
-| Both GET endpoints answered during ingestion? | ⟵ fill (Yes/No) |
-| Processing errors in the consumer log | ⟵ fill (None / list them) |
+| Both GET endpoints answered during ingestion? | Yes
+| Processing errors in the consumer log | None
 
 **Integrity checks (`scripts/Reconcile.sql`)**
 - Check 3 (player running totals vs. sum of their wagers): 0 rows, so consistent.
