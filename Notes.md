@@ -196,7 +196,10 @@ How the values were captured: the tester prints `ok`/`fail` at the end; `Wait-Fo
 ## 9. Tests
 
 `dotnet test test/OT.Assessment.Tests` - no RabbitMQ or SQL Server needed. They cover: batch processing and acknowledgement rules (valid batch, malformed message, transient retry, poison-message isolation), the size-or-time batch reader, message serialisation round trip and rejection of bad input, request validation and mapping (UTC conversion, trimming), the cache decorator (hit, per-count keys, TTL 0, broken cache falls back to the database), transient-error classification, and the controllers.
+
 Test summary: total: 26, failed: 0, succeeded: 26, skipped: 0, duration: 1.6s
+End-to-end verification (tester → API → RabbitMQ → consumer → SQL Server) is documented in section 8.
+
 CI: `.github/workflows/ci.yml` restores, builds and runs these on every push/PR.
 
 ## 10. Bonus additions
